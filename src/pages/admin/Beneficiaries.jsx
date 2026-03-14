@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Upload, Search, Trash2, CloudUpload } from 'lucide-react'
+import { Upload, Search, Trash2, UploadCloud } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { beneficiaryAPI } from '../../api'
 import Modal from '../../components/ui/Modal'
@@ -172,7 +172,7 @@ export default function AdminBeneficiaries() {
         <div className="space-y-4">
           <div onClick={() => fileRef.current?.click()}
             className="border-2 border-dashed border-slate-200 rounded-xl p-10 text-center cursor-pointer hover:border-brand-400 hover:bg-brand-50 transition-all">
-            <CloudUpload size={40} className="mx-auto text-slate-300 mb-3" />
+            <UploadCloud size={40} className="mx-auto text-slate-300 mb-3" />
             <p className="font-medium text-slate-600">Click to select CSV file</p>
             <p className="text-xs text-slate-400 mt-1">OldReferenceID, BeneficiaryName, MobileNumber, District, Block, GP…</p>
             <input type="file" ref={fileRef} className="hidden" accept=".csv" onChange={handleFile} />
