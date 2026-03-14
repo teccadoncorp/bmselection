@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Link2, ArrowRight, CheckSquare, Square } from 'lucide-react'
+import { Link2, CheckSquare, Square } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { assignmentAPI, operatorAPI, beneficiaryAPI } from '../../api'
 import Spinner from '../../components/ui/Spinner'

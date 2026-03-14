@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Users, CheckCircle, Clock, Phone, PhoneOff, ChevronRight } from 'lucide-react'
+import { Users, CheckCircle, Clock, Phone, ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { surveyAPI } from '../../api'
 import StatCard from '../../components/ui/StatCard'
