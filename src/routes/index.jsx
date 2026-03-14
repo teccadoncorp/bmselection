@@ -12,6 +12,8 @@ import AdminAssignments from '../pages/admin/Assignments'
 import AdminGeography from '../pages/admin/Geography'
 import AdminAnalytics from '../pages/admin/Analytics'
 import AdminMarketing from '../pages/admin/Marketing'
+import AdminResearch from '../pages/admin/Research'
+import AdminComplaints from '../pages/admin/Complaints'
 import OperatorDashboard from '../pages/operator/Dashboard'
 import OperatorBeneficiaries from '../pages/operator/BeneficiaryList'
 import OperatorBeneficiaryDetail from '../pages/operator/BeneficiaryDetail'
@@ -49,6 +51,8 @@ export default function AppRouter() {
           <Route path="assignments"   element={<AdminAssignments />} />
           <Route path="geography"     element={<AdminGeography />} />
           <Route path="analytics"     element={<AdminAnalytics />} />
+          <Route path="research"      element={<AdminResearch />} />
+          <Route path="complaints"    element={<AdminComplaints />} />
           <Route path="marketing"     element={<AdminMarketing />} />
         </Route>
 

@@ -8,6 +8,58 @@ import Spinner from '../../components/ui/Spinner'
 import RadioGroup from '../../components/ui/RadioGroup'
 import { getErrorMessage, SURVEY_OPTIONS } from '../../utils'
 
+function MoneyTakenRemarks({ value, onChange, beneficiaryName }) {
+  const [personName, setPersonName] = useState('')
+  const [personDetails, setPersonDetails] = useState('')
+  const [amount, setAmount] = useState('')
+
+  // Auto-fill template when values change
+  useEffect(() => {
+    if (personName || personDetails || amount) {
+      const template = `Person who took money: ${personName || '___'}. Details: ${personDetails || '___'}. Amount taken: ₹${amount || '___'}.`
+      onChange(template)
+    }
+  }, [personName, personDetails, amount])
+
+  return (
+    <div className="space-y-3 p-3 bg-red-50 border border-red-200 rounded-xl">
+      <p className="text-xs font-semibold text-red-700 uppercase tracking-wide">💰 Money Taken — Fill Details</p>
+      <div>
+        <label className="label text-xs">Person Who Took Money</label>
+        <input
+          className="input text-sm"
+          placeholder="Full name of person..."
+          value={personName}
+          onChange={e => setPersonName(e.target.value)}
+        />
+      </div>
+      <div>
+        <label className="label text-xs">Person Details (Role / Address)</label>
+        <input
+          className="input text-sm"
+          placeholder="e.g. Village head, ward no. 3..."
+          value={personDetails}
+          onChange={e => setPersonDetails(e.target.value)}
+        />
+      </div>
+      <div>
+        <label className="label text-xs">Amount Taken (₹)</label>
+        <input
+          className="input text-sm"
+          type="number"
+          placeholder="e.g. 5000"
+          value={amount}
+          onChange={e => setAmount(e.target.value)}
+        />
+      </div>
+      <div className="p-2 bg-white border border-red-200 rounded-lg text-xs text-slate-600">
+        <p className="font-semibold text-slate-500 mb-1">Auto-generated Remarks:</p>
+        <p>{value || <span className="italic text-slate-400">Fill above fields to generate…</span>}</p>
+      </div>
+    </div>
+  )
+}
+
 export default function OperatorBeneficiaryDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -94,7 +146,12 @@ export default function OperatorBeneficiaryDetail() {
 
           <div className="flex items-start gap-2 text-xs text-slate-500">
             <MapPin size={14} className="mt-0.5 shrink-0 text-slate-400" />
-            <span>{b.village_name}, {b.gp_name}, {b.block_name}, {b.district_name}</span>
+            <span>
+              {b.village_name && `${b.village_name}, `}
+              {b.gp_name && `${b.gp_name}, `}
+              {b.block_name && `${b.block_name}, `}
+              {b.district_name}
+            </span>
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-xs">
@@ -125,14 +182,28 @@ export default function OperatorBeneficiaryDetail() {
           <RadioGroup label="House Construction Status?" name="construction_status" value={form.construction_status}
             onChange={v => setForm(f => ({ ...f, construction_status: v }))} options={SURVEY_OPTIONS} />
 
-          <RadioGroup label="Someone Took Money?" name="money_taken" value={form.money_taken}
-            onChange={v => setForm(f => ({ ...f, money_taken: v }))} options={SURVEY_OPTIONS} />
+          <div className="space-y-3">
+            <RadioGroup label="Someone Took Money?" name="money_taken" value={form.money_taken}
+              onChange={v => setForm(f => ({ ...f, money_taken: v, remarks: v === 'Yes' ? f.remarks : '' }))} options={SURVEY_OPTIONS} />
 
-          <div>
-            <label className="label">Remarks</label>
-            <textarea className="input min-h-[80px] resize-none" placeholder="Add remarks…"
-              value={form.remarks} onChange={e => setForm(f => ({ ...f, remarks: e.target.value }))} />
+            {/* Auto-fill template when Yes */}
+            {form.money_taken === 'Yes' && (
+              <MoneyTakenRemarks
+                value={form.remarks}
+                onChange={v => setForm(f => ({ ...f, remarks: v }))}
+                beneficiaryName={b.beneficiary_name}
+              />
+            )}
           </div>
+
+          {/* Regular remarks when money not taken */}
+          {form.money_taken !== 'Yes' && (
+            <div>
+              <label className="label">Remarks</label>
+              <textarea className="input min-h-[80px] resize-none" placeholder="Add remarks…"
+                value={form.remarks} onChange={e => setForm(f => ({ ...f, remarks: e.target.value }))} />
+            </div>
+          )}
 
           <div>
             <label className="label">Survey Status</label>

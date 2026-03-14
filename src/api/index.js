@@ -40,6 +40,7 @@ export const assignmentAPI = {
   bulkAssign: (data) => api.post('/assignments/bulk-assign/', data),
   reassign: (data) => api.post('/assignments/reassign/', data),
   operatorSummary: () => api.get('/assignments/operator-summary/'),
+  operatorDetail: (params) => api.get('/assignments/operator-detail/', { params }),
 }
 
 // ─── Analytics ────────────────────────────────────────────────────────────────
@@ -76,4 +77,12 @@ export const marketingAPI = {
 // ─── Tasks ────────────────────────────────────────────────────────────────────
 export const tasksAPI = {
   list: () => api.get('/tasks/'),
+}
+
+// ─── Complaints ───────────────────────────────────────────────────────────────
+export const complaintAPI = {
+  list: (params) => api.get('/complaints/', { params }),
+  create: (data) => api.post('/complaints/', data),
+  update: (id, data) => api.patch(`/complaints/${id}/`, data),
+  delete: (id) => api.delete(`/complaints/${id}/`),
 }

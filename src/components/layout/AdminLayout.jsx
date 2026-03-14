@@ -2,7 +2,8 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import {
   LayoutDashboard, Users, UserCog, Link2, MapPin,
-  BarChart3, Megaphone, LogOut, ChevronLeft, ChevronRight, Vote
+  BarChart3, Megaphone, LogOut, ChevronLeft, ChevronRight,
+  Vote, FlaskConical, MessageSquareWarning
 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
 import { authAPI } from '../../api'
@@ -10,13 +11,15 @@ import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
 const NAV = [
-  { to: '/admin/dashboard',     icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/admin/beneficiaries', icon: Users,           label: 'Beneficiaries' },
-  { to: '/admin/operators',     icon: UserCog,         label: 'Operators' },
-  { to: '/admin/assignments',   icon: Link2,           label: 'Assignments' },
-  { to: '/admin/geography',     icon: MapPin,          label: 'Geography' },
-  { to: '/admin/analytics',     icon: BarChart3,       label: 'Analytics' },
-  { to: '/admin/marketing',     icon: Megaphone,       label: 'Marketing', disabled: true },
+  { to: '/admin/dashboard',     icon: LayoutDashboard,       label: 'Dashboard' },
+  { to: '/admin/beneficiaries', icon: Users,                 label: 'Beneficiaries' },
+  { to: '/admin/operators',     icon: UserCog,               label: 'Operators' },
+  { to: '/admin/assignments',   icon: Link2,                 label: 'Assignments' },
+  { to: '/admin/geography',     icon: MapPin,                label: 'Geography' },
+  { to: '/admin/analytics',     icon: BarChart3,             label: 'Analytics' },
+  { to: '/admin/research',      icon: FlaskConical,          label: 'Research' },
+  { to: '/admin/complaints',    icon: MessageSquareWarning,  label: 'Complaints' },
+  { to: '/admin/marketing',     icon: Megaphone,             label: 'Marketing', disabled: true },
 ]
 
 export default function AdminLayout() {
