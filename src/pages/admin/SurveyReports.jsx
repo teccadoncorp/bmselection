@@ -166,13 +166,6 @@ function ProgressBar({ value, max, color = C.green, label }) {
         <div className="h-full rounded-full transition-all duration-700" style={{ width: `${w}%`, background: color }} />
       </div>
 
-      {/* Survey detail drawer */}
-      {drawerBenefId && (
-        <AdminSurveyDetailDrawer
-          beneficiaryId={drawerBenefId}
-          onClose={() => setDrawerBenefId(null)}
-        />
-      )}
     </div>
   )
 }
@@ -338,7 +331,7 @@ function StatusTab({ filters, onView }) {
                     </td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => onView(r.survey_id)}
+                        onClick={() => onView(r.beneficiary_id)}
                         className="p-1.5 rounded-lg hover:bg-brand-50 text-slate-400 hover:text-brand-600 transition-colors"
                         title="View full details"
                       >
@@ -529,7 +522,7 @@ function CallStatusTab({ filters, onView }) {
                     </td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => onView(r.survey_id)}
+                        onClick={() => onView(r.beneficiary_id)}
                         className="p-1.5 rounded-lg hover:bg-brand-50 text-slate-400 hover:text-brand-600 transition-colors"
                         title="View full details"
                       >
@@ -925,6 +918,14 @@ export default function SurveyReports() {
         {activeTab === 'date'     && <DateTrendTab  filters={filters} />}
         {activeTab === 'operator' && <OperatorTab   filters={filters} />}
       </div>
+
+      {/* Survey detail drawer */}
+      {drawerBenefId && (
+        <AdminSurveyDetailDrawer
+          beneficiaryId={drawerBenefId}
+          onClose={() => setDrawerBenefId(null)}
+        />
+      )}
     </div>
   )
 }
