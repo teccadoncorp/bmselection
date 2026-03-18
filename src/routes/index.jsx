@@ -14,6 +14,7 @@ import AdminAnalytics from '../pages/admin/Analytics'
 import AdminMarketing from '../pages/admin/Marketing'
 import AdminResearch from '../pages/admin/Research'
 import AdminComplaints from '../pages/admin/Complaints'
+import AdminSurveyReports from '../pages/admin/SurveyReports'
 import OperatorDashboard from '../pages/operator/Dashboard'
 import OperatorBeneficiaries from '../pages/operator/BeneficiaryList'
 import OperatorBeneficiaryDetail from '../pages/operator/BeneficiaryDetail'
@@ -54,6 +55,7 @@ export default function AppRouter() {
           <Route path="research"      element={<AdminResearch />} />
           <Route path="complaints"    element={<AdminComplaints />} />
           <Route path="marketing"     element={<AdminMarketing />} />
+          <Route path="survey-reports" element={<AdminSurveyReports />} />
         </Route>
 
         {/* Operator Routes */}

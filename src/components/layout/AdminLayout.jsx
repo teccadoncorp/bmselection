@@ -3,7 +3,7 @@ import { useState } from 'react'
 import {
   LayoutDashboard, Users, UserCog, Link2, MapPin,
   BarChart3, Megaphone, LogOut, ChevronLeft, ChevronRight,
-  Vote, FlaskConical, MessageSquareWarning
+  Vote, FlaskConical, MessageSquareWarning, ClipboardList
 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
 import { authAPI } from '../../api'
@@ -17,6 +17,7 @@ const NAV = [
   { to: '/admin/assignments',   icon: Link2,                 label: 'Assignments' },
   { to: '/admin/geography',     icon: MapPin,                label: 'Geography' },
   { to: '/admin/analytics',     icon: BarChart3,             label: 'Analytics' },
+  { to: '/admin/survey-reports',icon: ClipboardList,          label: 'Survey Reports' },
   { to: '/admin/research',      icon: FlaskConical,          label: 'Research' },
   { to: '/admin/complaints',    icon: MessageSquareWarning,  label: 'Complaints' },
   { to: '/admin/marketing',     icon: Megaphone,             label: 'Marketing', disabled: true },

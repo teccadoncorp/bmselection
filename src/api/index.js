@@ -74,6 +74,17 @@ export const marketingAPI = {
   social: () => api.get('/marketing/social/'),
 }
 
+// ─── Survey Reports ───────────────────────────────────────────────────────────
+export const surveyReportAPI = {
+  summary:     (params) => api.get('/survey/reports/summary/',        { params }),
+  byStatus:    (params) => api.get('/survey/reports/by-status/',      { params }),
+  byGP:        (params) => api.get('/survey/reports/by-gp/',         { params }),
+  byCallStatus:(params) => api.get('/survey/reports/by-call-status/', { params }),
+  byFAQ:       (params) => api.get('/survey/reports/by-faq/',        { params }),
+  byDate:      (params) => api.get('/survey/reports/by-date/',       { params }),
+  byOperator:  (params) => api.get('/survey/reports/by-operator/',   { params }),
+}
+
 // ─── Tasks ────────────────────────────────────────────────────────────────────
 export const tasksAPI = {
   list: () => api.get('/tasks/'),
