@@ -8,13 +8,14 @@ import {
   ClipboardList, CheckCircle2, Clock3, Phone, PhoneOff, MapPin,
   TrendingUp, MessageCircleQuestion, Users, ChevronDown, ChevronLeft,
   ChevronRight, Download, RefreshCw, Calendar, Filter, Home, Wallet,
-  HardHat, AlertTriangle
+  HardHat, AlertTriangle, Eye
 } from 'lucide-react'
 import { surveyReportAPI } from '../../api'
 import Spinner from '../../components/ui/Spinner'
 import StatCard from '../../components/ui/StatCard'
 import Select from '../../components/ui/Select'
 import { useDistricts, useBlocks, useGPs } from '../../hooks/useGeography'
+import AdminSurveyDetailDrawer from '../../components/admin/AdminSurveyDetailDrawer'
 
 // ─── Colour palette consistent with existing app ─────────────────────────────
 const C = {
@@ -164,6 +165,14 @@ function ProgressBar({ value, max, color = C.green, label }) {
       <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
         <div className="h-full rounded-full transition-all duration-700" style={{ width: `${w}%`, background: color }} />
       </div>
+
+      {/* Survey detail drawer */}
+      {drawerBenefId && (
+        <AdminSurveyDetailDrawer
+          beneficiaryId={drawerBenefId}
+          onClose={() => setDrawerBenefId(null)}
+        />
+      )}
     </div>
   )
 }
@@ -268,7 +277,7 @@ function SummaryTab({ filters }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // TAB 2: Status-wise list
 // ─────────────────────────────────────────────────────────────────────────────
-function StatusTab({ filters }) {
+function StatusTab({ filters, onView }) {
   const [status,   setStatus]   = useState('Pending')
   const [page,     setPage]     = useState(1)
 
@@ -304,7 +313,7 @@ function StatusTab({ filters }) {
             <table className="w-full text-sm">
               <thead className="bg-slate-50 border-b border-slate-100">
                 <tr>
-                  {['Beneficiary', 'Mobile', 'GP', 'Block', 'District', 'Call', 'Status', 'Updated By', 'Last Updated'].map(h => (
+                  {['Beneficiary', 'Mobile', 'GP', 'Block', 'District', 'Call', 'Status', 'Updated By', 'Last Updated', ''].map(h => (
                     <th key={h} className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -326,6 +335,15 @@ function StatusTab({ filters }) {
                     <td className="px-4 py-3 text-xs text-slate-500">{r.last_updated_by || '—'}</td>
                     <td className="px-4 py-3 text-xs text-slate-400 whitespace-nowrap">
                       {r.updated_at ? new Date(r.updated_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => onView(r.survey_id)}
+                        className="p-1.5 rounded-lg hover:bg-brand-50 text-slate-400 hover:text-brand-600 transition-colors"
+                        title="View full details"
+                      >
+                        <Eye size={15} />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -443,7 +461,7 @@ function GPTab({ filters }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // TAB 4: Call Status
 // ─────────────────────────────────────────────────────────────────────────────
-function CallStatusTab({ filters }) {
+function CallStatusTab({ filters, onView }) {
   const [callFilter, setCallFilter] = useState('No')
   const [page, setPage] = useState(1)
 
@@ -482,7 +500,7 @@ function CallStatusTab({ filters }) {
             <table className="w-full text-sm">
               <thead className="bg-slate-50 border-b border-slate-100">
                 <tr>
-                  {['Beneficiary', 'Mobile', 'GP', 'Block', 'Survey Status', ...FAQ_KEYS.map(k => FAQ_SHORT[k]), 'Updated By', 'Last Updated'].map(h => (
+                  {['Beneficiary', 'Mobile', 'GP', 'Block', 'Survey Status', ...FAQ_KEYS.map(k => FAQ_SHORT[k]), 'Updated By', 'Last Updated', ''].map(h => (
                     <th key={h} className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -508,6 +526,15 @@ function CallStatusTab({ filters }) {
                     <td className="px-4 py-3 text-xs text-slate-500">{r.last_updated_by || '—'}</td>
                     <td className="px-4 py-3 text-xs text-slate-400 whitespace-nowrap">
                       {r.updated_at ? new Date(r.updated_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => onView(r.survey_id)}
+                        className="p-1.5 rounded-lg hover:bg-brand-50 text-slate-400 hover:text-brand-600 transition-colors"
+                        title="View full details"
+                      >
+                        <Eye size={15} />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -849,10 +876,12 @@ const TABS = [
 ]
 
 export default function SurveyReports() {
-  const [activeTab, setActiveTab] = useState('summary')
-  const [filters,   setFilters]   = useState({})
+  const [activeTab,     setActiveTab]     = useState('summary')
+  const [filters,       setFilters]       = useState({})
+  const [drawerBenefId, setDrawerBenefId] = useState(null)
 
   const currentTab = TABS.find(t => t.id === activeTab)
+  const openDrawer = (surveyId) => setDrawerBenefId(surveyId)
 
   return (
     <div className="p-6 space-y-5 min-h-screen">
@@ -889,9 +918,9 @@ export default function SurveyReports() {
       {/* Active tab content */}
       <div>
         {activeTab === 'summary'  && <SummaryTab    filters={filters} />}
-        {activeTab === 'status'   && <StatusTab     filters={filters} />}
+        {activeTab === 'status'   && <StatusTab     filters={filters} onView={openDrawer} />}
         {activeTab === 'gp'       && <GPTab         filters={filters} />}
-        {activeTab === 'call'     && <CallStatusTab filters={filters} />}
+        {activeTab === 'call'     && <CallStatusTab filters={filters} onView={openDrawer} />}
         {activeTab === 'faq'      && <FAQTab        filters={filters} />}
         {activeTab === 'date'     && <DateTrendTab  filters={filters} />}
         {activeTab === 'operator' && <OperatorTab   filters={filters} />}

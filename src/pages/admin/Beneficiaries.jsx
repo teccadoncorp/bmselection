@@ -1,9 +1,10 @@
 import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Upload, Search, Trash2, UploadCloud } from 'lucide-react'
+import { Upload, Search, Trash2, UploadCloud, Eye } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { beneficiaryAPI } from '../../api'
 import Modal from '../../components/ui/Modal'
+import AdminSurveyDetailDrawer from '../../components/admin/AdminSurveyDetailDrawer'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import Spinner from '../../components/ui/Spinner'
 import EmptyState from '../../components/ui/EmptyState'
@@ -26,6 +27,7 @@ export default function AdminBeneficiaries() {
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState('list') // 'list' | 'faq'
   const [modal, setModal] = useState(null)
+  const [drawerBenefId, setDrawerBenefId] = useState(null)
   const [selected, setSelected] = useState(null)
   const [geoFilters, setGeoFilters] = useState({})
   const [faqFilters, setFaqFilters] = useState({})
@@ -155,6 +157,11 @@ export default function AdminBeneficiaries() {
                     <td className="px-4 py-3"><span className="badge-blue">{b.gender}</span></td>
                     <td className="px-4 py-3 text-slate-500 text-xs max-w-[160px] truncate">{b.govt_scheme_name}</td>
                     <td className="px-4 py-3">
+                      <button
+                        onClick={() => setDrawerBenefId(b.id)}
+                        className="p-1.5 rounded hover:bg-brand-50 text-slate-400 hover:text-brand-600 mr-1"
+                        title="View survey details"
+                      ><Eye size={14} /></button>
                       <button onClick={() => { setSelected(b); setModal('delete') }}
                         className="p-1.5 rounded hover:bg-red-50 text-red-400"><Trash2 size={14} /></button>
                     </td>
@@ -198,6 +205,13 @@ export default function AdminBeneficiaries() {
       <ConfirmDialog open={modal === 'delete'} onClose={() => setModal(null)}
         onConfirm={() => deleteMut.mutate()} loading={deleteMut.isPending}
         title="Delete Beneficiary" message={`Delete "${selected?.beneficiary_name}"?`} />
+
+      {drawerBenefId && (
+        <AdminSurveyDetailDrawer
+          beneficiaryId={drawerBenefId}
+          onClose={() => setDrawerBenefId(null)}
+        />
+      )}
     </div>
   )
 }
