@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, CheckSquare, LogOut, Vote } from 'lucide-react'
+import { LayoutDashboard, Users, CheckSquare, LogOut, Vote,TrendingUp } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
+
 import { authAPI } from '../../api'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -9,6 +10,7 @@ const NAV = [
   { to: '/operator/dashboard',     icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/operator/beneficiaries', icon: Users,           label: 'My List' },
   { to: '/operator/tasks',         icon: CheckSquare,     label: 'Tasks', disabled: true },
+  { to: '/operator/opinion',       icon: TrendingUp,      label: 'Opinion' },
 ]
 
 export default function OperatorLayout() {

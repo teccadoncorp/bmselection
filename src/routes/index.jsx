@@ -15,10 +15,13 @@ import AdminMarketing from '../pages/admin/Marketing'
 import AdminResearch from '../pages/admin/Research'
 import AdminComplaints from '../pages/admin/Complaints'
 import AdminSurveyReports from '../pages/admin/SurveyReports'
+import AdminOpinionAnalysis from '../pages/admin/OpinionAnalysis'   // ← NEW
 import OperatorDashboard from '../pages/operator/Dashboard'
 import OperatorBeneficiaries from '../pages/operator/BeneficiaryList'
 import OperatorBeneficiaryDetail from '../pages/operator/BeneficiaryDetail'
 import OperatorTasks from '../pages/operator/Tasks'
+import OperatorOpinion from '../pages/operator/OpinionEntry'        // ← NEW
+
 
 function RequireAuth({ children, role }) {
   const { user, accessToken } = useAuthStore()
@@ -46,16 +49,17 @@ export default function AppRouter() {
           <RequireAuth role="admin"><AdminLayout /></RequireAuth>
         }>
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard"     element={<AdminDashboard />} />
-          <Route path="beneficiaries" element={<AdminBeneficiaries />} />
-          <Route path="operators"     element={<AdminOperators />} />
-          <Route path="assignments"   element={<AdminAssignments />} />
-          <Route path="geography"     element={<AdminGeography />} />
-          <Route path="analytics"     element={<AdminAnalytics />} />
-          <Route path="research"      element={<AdminResearch />} />
-          <Route path="complaints"    element={<AdminComplaints />} />
-          <Route path="marketing"     element={<AdminMarketing />} />
-          <Route path="survey-reports" element={<AdminSurveyReports />} />
+          <Route path="dashboard"        element={<AdminDashboard />} />
+          <Route path="beneficiaries"    element={<AdminBeneficiaries />} />
+          <Route path="operators"        element={<AdminOperators />} />
+          <Route path="assignments"      element={<AdminAssignments />} />
+          <Route path="geography"        element={<AdminGeography />} />
+          <Route path="analytics"        element={<AdminAnalytics />} />
+          <Route path="research"         element={<AdminResearch />} />
+          <Route path="complaints"       element={<AdminComplaints />} />
+          <Route path="marketing"        element={<AdminMarketing />} />
+          <Route path="survey-reports"   element={<AdminSurveyReports />} />
+          <Route path="opinion-analysis" element={<AdminOpinionAnalysis />} />  {/* ← NEW */}
         </Route>
 
         {/* Operator Routes */}
@@ -63,10 +67,11 @@ export default function AppRouter() {
           <RequireAuth role="operator"><OperatorLayout /></RequireAuth>
         }>
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard"            element={<OperatorDashboard />} />
-          <Route path="beneficiaries"        element={<OperatorBeneficiaries />} />
-          <Route path="beneficiaries/:id"    element={<OperatorBeneficiaryDetail />} />
-          <Route path="tasks"                element={<OperatorTasks />} />
+          <Route path="dashboard"         element={<OperatorDashboard />} />
+          <Route path="beneficiaries"     element={<OperatorBeneficiaries />} />
+          <Route path="beneficiaries/:id" element={<OperatorBeneficiaryDetail />} />
+          <Route path="tasks"             element={<OperatorTasks />} />
+          <Route path="opinion"           element={<OperatorOpinion />} />        {/* ← NEW */}
         </Route>
 
         {/* Default redirect */}
