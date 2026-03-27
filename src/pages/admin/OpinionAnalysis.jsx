@@ -7,16 +7,88 @@ import {
 import {
   Plus, Upload, Download, Trash2, Edit2, X, Check,
   ChevronDown, BarChart2, TrendingUp, Users, MapPin,
-  AlertCircle, FileText, RefreshCw, Eye, Filter
+  AlertCircle, FileText, RefreshCw, Eye, Filter, UserMinus, Search
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../../api/axios'
+import { geographyAPI } from '../../api'
 
 // ─── tiny helpers ─────────────────────────────────────────────────────────────
 const fmt = (n) => (n == null ? '—' : `${n}%`)
 const cls = (...a) => a.filter(Boolean).join(' ')
 
 const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#14b8a6', '#a855f7', '#f97316']
+
+// ─── Cascading Geography Filter Bar ──────────────────────────────────────────
+function GeoFilterBar({ geoFilters, setGeoFilters, className = '' }) {
+  const [districts, setDistricts] = useState([])
+  const [blocks, setBlocks]       = useState([])
+  const [gps, setGps]             = useState([])
+  const [distId, setDistId]       = useState('')
+  const [blockId, setBlockId]     = useState('')
+
+  useEffect(() => {
+    geographyAPI.districts.list({ page_size: 200 })
+      .then(r => setDistricts(r.data.results ?? r.data)).catch(() => {})
+  }, [])
+  useEffect(() => {
+    if (!distId) { setBlocks([]); setGps([]); return }
+    geographyAPI.blocks.list({ district: distId, page_size: 200 })
+      .then(r => setBlocks(r.data.results ?? r.data)).catch(() => {})
+  }, [distId])
+  useEffect(() => {
+    if (!blockId) { setGps([]); return }
+    geographyAPI.gps.list({ block: blockId, page_size: 200 })
+      .then(r => setGps(r.data.results ?? r.data)).catch(() => {})
+  }, [blockId])
+
+  const sel = 'border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white'
+
+  const reset = () => {
+    setDistId(''); setBlockId('')
+    setGeoFilters({})
+  }
+
+  return (
+    <div className={cls('flex flex-wrap items-center gap-2', className)}>
+      <Filter size={13} className="text-slate-400" />
+      <select className={sel} value={distId}
+        onChange={e => {
+          setDistId(e.target.value); setBlockId('')
+          const d = districts.find(x => String(x.id) === e.target.value)
+          setGeoFilters({ district_lgd: d?.lgd_code, district_id: e.target.value || undefined })
+        }}>
+        <option value="">All Districts</option>
+        {districts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+      </select>
+
+      <select className={sel} value={blockId} disabled={!distId}
+        onChange={e => {
+          setBlockId(e.target.value)
+          const b = blocks.find(x => String(x.id) === e.target.value)
+          setGeoFilters(f => ({ ...f, block_lgd: b?.lgd_code, block_id: e.target.value || undefined }))
+        }}>
+        <option value="">All Blocks</option>
+        {blocks.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+      </select>
+
+      <select className={sel} disabled={!blockId}
+        onChange={e => {
+          const g = gps.find(x => String(x.id) === e.target.value)
+          setGeoFilters(f => ({ ...f, gp_lgd: g?.lgd_code, gp_id: e.target.value || undefined }))
+        }}>
+        <option value="">All GPs</option>
+        {gps.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+      </select>
+
+      {Object.keys(geoFilters).length > 0 && (
+        <button onClick={reset} className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-slate-500 hover:text-indigo-600 border border-slate-200 rounded-lg hover:bg-slate-50">
+          <X size={11} /> Clear
+        </button>
+      )}
+    </div>
+  )
+}
 
 function Badge({ result }) {
   return (
@@ -129,10 +201,11 @@ function DashboardTab({ booths }) {
   const [loading, setLoading]       = useState(false)
   const [filterBooth, setFilterBooth] = useState('')
   const [filterYear, setFilterYear]   = useState('')
+  const [geoFilters, setGeoFilters]   = useState({})
 
   const load = () => {
     setLoading(true)
-    const params = {}
+    const params = { ...geoFilters }
     if (filterBooth) params.booth = filterBooth
     if (filterYear)  params.election_year = filterYear
     api.get('/opinion/analytics/', { params })
@@ -181,25 +254,28 @@ function DashboardTab({ booths }) {
   return (
     <div className="space-y-6">
       {/* Filters */}
-      <div className="bg-white rounded-xl border p-4 flex flex-wrap gap-3 items-end">
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-slate-600">Filter by Booth</label>
-          <select value={filterBooth} onChange={e => setFilterBooth(e.target.value)}
-            className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 min-w-[180px]">
-            <option value="">All Booths</option>
-            {booths.map(b => <option key={b.id} value={b.id}>{b.booth_number} – {b.booth_name}</option>)}
-          </select>
+      <div className="bg-white rounded-xl border p-4 space-y-3">
+        <GeoFilterBar geoFilters={geoFilters} setGeoFilters={v => { setGeoFilters(v); }} />
+        <div className="flex flex-wrap gap-3 items-end">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-600">Filter by Booth</label>
+            <select value={filterBooth} onChange={e => setFilterBooth(e.target.value)}
+              className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 min-w-[180px]">
+              <option value="">All Booths</option>
+              {booths.map(b => <option key={b.id} value={b.id}>{b.booth_number} – {b.booth_name}</option>)}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-600">Election Year</label>
+            <input type="number" placeholder="e.g. 2024" value={filterYear}
+              onChange={e => setFilterYear(e.target.value)}
+              className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 w-32" />
+          </div>
+          <button onClick={load}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+            {loading ? <Spinner /> : <RefreshCw size={14} />} Refresh
+          </button>
         </div>
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-slate-600">Election Year</label>
-          <input type="number" placeholder="e.g. 2024" value={filterYear}
-            onChange={e => setFilterYear(e.target.value)}
-            className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 w-32" />
-        </div>
-        <button onClick={load}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
-          {loading ? <Spinner /> : <RefreshCw size={14} />} Refresh
-        </button>
       </div>
 
       {loading && !analytics ? (
@@ -361,9 +437,20 @@ function BoothsTab({ booths, onReload }) {
   const [form, setForm]     = useState({})
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(null)
+  const [geoFilters, setGeoFilters] = useState({})
+  const [search, setSearch] = useState('')
 
   const openCreate = () => { setEditing(null); setForm({}); setModal(true) }
   const openEdit   = (b)  => { setEditing(b); setForm({ ...b }); setModal(true) }
+
+  const filteredBooths = booths.filter(b => {
+    if (geoFilters.district_lgd && b.district_lgd !== geoFilters.district_lgd) return false
+    if (geoFilters.block_lgd    && b.block_lgd    !== geoFilters.block_lgd)    return false
+    if (geoFilters.gp_lgd       && b.gp_lgd       !== geoFilters.gp_lgd)       return false
+    if (search && !b.booth_name?.toLowerCase().includes(search.toLowerCase())
+               && !b.booth_number?.toLowerCase().includes(search.toLowerCase())) return false
+    return true
+  })
 
   const save = async () => {
     setSaving(true)
@@ -389,7 +476,16 @@ function BoothsTab({ booths, onReload }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="bg-white rounded-xl border p-4 space-y-3">
+        <GeoFilterBar geoFilters={geoFilters} setGeoFilters={setGeoFilters} />
+        <div className="relative max-w-xs">
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search booths..."
+            className="w-full pl-8 pr-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+        </div>
+      </div>
+      <div className="flex justify-between items-center">
+        <span className="text-sm text-slate-500">{filteredBooths.length} booth{filteredBooths.length !== 1 ? 's' : ''}</span>
         <button onClick={openCreate}
           className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
           <Plus size={15} /> Add Booth
@@ -409,10 +505,10 @@ function BoothsTab({ booths, onReload }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {booths.length === 0 && (
-              <tr><td colSpan={6} className="text-center py-10 text-slate-400">No booths yet. Add your first booth.</td></tr>
+            {filteredBooths.length === 0 && (
+              <tr><td colSpan={6} className="text-center py-10 text-slate-400">No booths match filters.</td></tr>
             )}
-            {booths.map(b => (
+            {filteredBooths.map(b => (
               <tr key={b.id} className="hover:bg-slate-50">
                 <td className="px-4 py-3 font-mono font-semibold text-indigo-700">{b.booth_number}</td>
                 <td className="px-4 py-3 text-slate-700">{b.booth_name}</td>
@@ -724,12 +820,20 @@ function ResultsTab({ booths }) {
 // ══════════════════════════════════════════════════════════════════════════════
 function TasksTab({ booths, operators }) {
   const [tasks, setTasks]         = useState([])
-  const [entries, setEntries]     = useState([])
+  const [entries, setEntries]     = useState([]  )
   const [loading, setLoading]     = useState(false)
   const [modal, setModal]         = useState(false)
   const [viewTask, setViewTask]   = useState(null)
   const [form, setForm]           = useState({})
   const [saving, setSaving]       = useState(false)
+  const [geoFilters, setGeoFilters] = useState({})
+
+  const filteredBooths = booths.filter(b => {
+    if (geoFilters.district_lgd && b.district_lgd !== geoFilters.district_lgd) return false
+    if (geoFilters.block_lgd    && b.block_lgd    !== geoFilters.block_lgd)    return false
+    if (geoFilters.gp_lgd       && b.gp_lgd       !== geoFilters.gp_lgd)       return false
+    return true
+  })
 
   const load = () => {
     setLoading(true)
@@ -764,10 +868,27 @@ function TasksTab({ booths, operators }) {
     catch { toast.error('Delete failed') }
   }
 
+  const disassign = async (t) => {
+    if (!confirm(`Disassign ${t.operator_name} from this task?`)) return
+    try {
+      await api.patch(`/opinion/tasks/${t.id}/`, { is_active: false })
+      toast.success('Task disassigned')
+      load()
+    } catch { toast.error('Disassign failed') }
+  }
+
   const openView = (task) => {
     setViewTask(task)
     loadEntries(task.id)
   }
+
+  // Filter tasks by geo (match booth's geo fields)
+  const filteredTasks = tasks.filter(t => {
+    if (geoFilters.district_lgd && t.district_lgd && t.district_lgd !== geoFilters.district_lgd) return false
+    if (geoFilters.block_lgd    && t.block_lgd    && t.block_lgd    !== geoFilters.block_lgd)    return false
+    if (geoFilters.gp_lgd       && t.gp_lgd       && t.gp_lgd       !== geoFilters.gp_lgd)       return false
+    return true
+  })
 
   // Chart: entries for viewed task
   const entryChartData = entries.map((e, i) => ({
@@ -777,7 +898,11 @@ function TasksTab({ booths, operators }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="bg-white rounded-xl border p-4">
+        <GeoFilterBar geoFilters={geoFilters} setGeoFilters={setGeoFilters} />
+      </div>
+      <div className="flex justify-between items-center">
+        <span className="text-sm text-slate-500">{filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''}</span>
         <button onClick={() => { setForm({}); setModal(true) }}
           className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
           <Plus size={14} /> Assign Task
@@ -800,10 +925,10 @@ function TasksTab({ booths, operators }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {tasks.length === 0 && (
-                <tr><td colSpan={6} className="text-center py-10 text-slate-400">No tasks assigned yet.</td></tr>
+              {filteredTasks.length === 0 && (
+                <tr><td colSpan={6} className="text-center py-10 text-slate-400">No tasks found.</td></tr>
               )}
-              {tasks.map(t => (
+              {filteredTasks.map(t => (
                 <tr key={t.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3">
                     <div className="font-medium text-slate-800">{t.booth_number}</div>
@@ -825,9 +950,12 @@ function TasksTab({ booths, operators }) {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => openView(t)} className="p-1.5 rounded-lg hover:bg-indigo-50 text-indigo-600"><Eye size={14} /></button>
-                      <button onClick={() => del(t.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"><Trash2 size={14} /></button>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button onClick={() => openView(t)} className="p-1.5 rounded-lg hover:bg-indigo-50 text-indigo-600" title="View entries"><Eye size={14} /></button>
+                      {t.is_active && (
+                        <button onClick={() => disassign(t)} className="p-1.5 rounded-lg hover:bg-orange-50 text-orange-500" title="Disassign operator"><UserMinus size={14} /></button>
+                      )}
+                      <button onClick={() => del(t.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-red-500" title="Delete task"><Trash2 size={14} /></button>
                     </div>
                   </td>
                 </tr>
@@ -843,7 +971,7 @@ function TasksTab({ booths, operators }) {
           <Field label="Booth *">
             <select className={inp} value={form.booth ?? ''} onChange={e => setForm(p => ({ ...p, booth: e.target.value }))}>
               <option value="">Select booth</option>
-              {booths.map(b => <option key={b.id} value={b.id}>{b.booth_number} – {b.booth_name}</option>)}
+              {filteredBooths.map(b => <option key={b.id} value={b.id}>{b.booth_number} – {b.booth_name}</option>)}
             </select>
           </Field>
           <Field label="Operator *">

@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, UserCog, Link2, MapPin,
   BarChart3, Megaphone, LogOut, ChevronLeft, ChevronRight,
   Vote, FlaskConical, MessageSquareWarning, ClipboardList,
-  TrendingUp   // ← add this
+  TrendingUp, Users2   // ← add Users2
 } from 'lucide-react'
 import useAuthStore from '../../store/authStore'
 import { authAPI } from '../../api'
@@ -20,6 +20,7 @@ const NAV = [
   { to: '/admin/analytics',     icon: BarChart3,             label: 'Analytics' },
   { to: '/admin/survey-reports',icon: ClipboardList,          label: 'Survey Reports' },
   { to: '/admin/opinion-analysis', icon: TrendingUp,           label: 'Opinion Analysis' },  // ← add this
+  { to: '/admin/booth-committee',  icon: Users2,               label: 'Booth Committee' },
   { to: '/admin/research',      icon: FlaskConical,          label: 'Research' },
   { to: '/admin/complaints',    icon: MessageSquareWarning,  label: 'Complaints' },
   { to: '/admin/marketing',     icon: Megaphone,             label: 'Marketing', disabled: true },

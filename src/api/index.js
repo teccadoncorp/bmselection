@@ -39,8 +39,22 @@ export const assignmentAPI = {
   list: (params) => api.get('/assignments/', { params }),
   bulkAssign: (data) => api.post('/assignments/bulk-assign/', data),
   reassign: (data) => api.post('/assignments/reassign/', data),
+  disassign: (data) => api.post('/assignments/disassign/', data),
   operatorSummary: () => api.get('/assignments/operator-summary/'),
   operatorDetail: (params) => api.get('/assignments/operator-detail/', { params }),
+}
+
+// ─── Booth Committee ──────────────────────────────────────────────────────────
+export const boothCommitteeAPI = {
+  list:   (params) => api.get('/booth-committee/members/', { params }),
+  create: (data)   => api.post('/booth-committee/members/', data, {
+    headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
+  }),
+  update: (id, data) => api.patch(`/booth-committee/members/${id}/`, data, {
+    headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
+  }),
+  delete: (id)     => api.delete(`/booth-committee/members/${id}/`),
+  stats:  (params) => api.get('/booth-committee/members/stats/', { params }),
 }
 
 // ─── Analytics ────────────────────────────────────────────────────────────────

@@ -16,6 +16,7 @@ import AdminResearch from '../pages/admin/Research'
 import AdminComplaints from '../pages/admin/Complaints'
 import AdminSurveyReports from '../pages/admin/SurveyReports'
 import AdminOpinionAnalysis from '../pages/admin/OpinionAnalysis'   // ← NEW
+import AdminBoothCommittee from '../pages/admin/BoothCommittee'
 import OperatorDashboard from '../pages/operator/Dashboard'
 import OperatorBeneficiaries from '../pages/operator/BeneficiaryList'
 import OperatorBeneficiaryDetail from '../pages/operator/BeneficiaryDetail'
@@ -60,6 +61,7 @@ export default function AppRouter() {
           <Route path="marketing"        element={<AdminMarketing />} />
           <Route path="survey-reports"   element={<AdminSurveyReports />} />
           <Route path="opinion-analysis" element={<AdminOpinionAnalysis />} />  {/* ← NEW */}
+          <Route path="booth-committee"  element={<AdminBoothCommittee />} />
         </Route>
 
         {/* Operator Routes */}
