@@ -431,6 +431,107 @@ function DashboardTab({ booths }) {
 // ══════════════════════════════════════════════════════════════════════════════
 // BOOTHS TAB
 // ══════════════════════════════════════════════════════════════════════════════
+
+// Cascading geo selector used inside the Add/Edit Booth modal
+function BoothGeoSelector({ form, setForm }) {
+  const [districts, setDistricts] = useState([])
+  const [blocks, setBlocks]       = useState([])
+  const [gps, setGps]             = useState([])
+  const [selDistId, setSelDistId] = useState('')
+  const [selBlockId, setSelBlockId] = useState('')
+
+  const sel = 'w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400'
+
+  useEffect(() => {
+    geographyAPI.districts.list({ page_size: 200 })
+      .then(r => setDistricts(r.data.results ?? r.data)).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!selDistId) { setBlocks([]); setGps([]); return }
+    geographyAPI.blocks.list({ district: selDistId, page_size: 200 })
+      .then(r => setBlocks(r.data.results ?? r.data)).catch(() => {})
+    setSelBlockId('')
+    setGps([])
+  }, [selDistId])
+
+  useEffect(() => {
+    if (!selBlockId) { setGps([]); return }
+    geographyAPI.gps.list({ block: selBlockId, page_size: 200 })
+      .then(r => setGps(r.data.results ?? r.data)).catch(() => {})
+  }, [selBlockId])
+
+  return (
+    <>
+      <div className="space-y-1 col-span-2">
+        <label className="text-xs font-medium text-slate-600">Select District</label>
+        <select className={sel} value={selDistId}
+          onChange={e => {
+            const d = districts.find(x => String(x.id) === e.target.value)
+            setSelDistId(e.target.value)
+            setForm(p => ({
+              ...p,
+              district_name: d?.name ?? '',
+              district_lgd:  d?.lgd_code ?? '',
+              block_name: '', block_lgd: '', gp_name: '', gp_lgd: '',
+            }))
+          }}>
+          <option value="">— Select District —</option>
+          {districts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+        </select>
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-xs font-medium text-slate-600">Select Block</label>
+        <select className={sel} value={selBlockId} disabled={!selDistId}
+          onChange={e => {
+            const b = blocks.find(x => String(x.id) === e.target.value)
+            setSelBlockId(e.target.value)
+            setForm(p => ({
+              ...p,
+              block_name: b?.name ?? '',
+              block_lgd:  b?.lgd_code ?? '',
+              gp_name: '', gp_lgd: '',
+            }))
+          }}>
+          <option value="">— Select Block —</option>
+          {blocks.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+        </select>
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-xs font-medium text-slate-600">Select GP</label>
+        <select className={sel} disabled={!selBlockId}
+          onChange={e => {
+            const g = gps.find(x => String(x.id) === e.target.value)
+            setForm(p => ({
+              ...p,
+              gp_name: g?.name ?? '',
+              gp_lgd:  g?.lgd_code ?? '',
+            }))
+          }}>
+          <option value="">— Select GP —</option>
+          {gps.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+        </select>
+      </div>
+
+      {/* Read-only LGD code displays */}
+      <div className="space-y-1">
+        <label className="text-xs font-medium text-slate-400">District LGD (auto)</label>
+        <input className={inp} value={form.district_lgd ?? ''} readOnly placeholder="Auto-filled" />
+      </div>
+      <div className="space-y-1">
+        <label className="text-xs font-medium text-slate-400">Block LGD (auto)</label>
+        <input className={inp} value={form.block_lgd ?? ''} readOnly placeholder="Auto-filled" />
+      </div>
+      <div className="space-y-1">
+        <label className="text-xs font-medium text-slate-400">GP LGD (auto)</label>
+        <input className={inp} value={form.gp_lgd ?? ''} readOnly placeholder="Auto-filled" />
+      </div>
+    </>
+  )
+}
+
 function BoothsTab({ booths, onReload }) {
   const [modal, setModal]   = useState(false)
   const [editing, setEditing] = useState(null)
@@ -439,14 +540,43 @@ function BoothsTab({ booths, onReload }) {
   const [deleting, setDeleting] = useState(null)
   const [geoFilters, setGeoFilters] = useState({})
   const [search, setSearch] = useState('')
+  // Dedicated filter state for the booth list GP/Block dropdowns
+  const [filterDistricts, setFilterDistricts] = useState([])
+  const [filterBlocks, setFilterBlocks]       = useState([])
+  const [filterGps, setFilterGps]             = useState([])
+  const [filterDistId, setFilterDistId]       = useState('')
+  const [filterBlockId, setFilterBlockId]     = useState('')
+  const [filterGpId, setFilterGpId]           = useState('')
+
+  // Load districts for filter bar
+  useEffect(() => {
+    geographyAPI.districts.list({ page_size: 200 })
+      .then(r => setFilterDistricts(r.data.results ?? r.data)).catch(() => {})
+  }, [])
+  useEffect(() => {
+    if (!filterDistId) { setFilterBlocks([]); setFilterGps([]); return }
+    geographyAPI.blocks.list({ district: filterDistId, page_size: 200 })
+      .then(r => setFilterBlocks(r.data.results ?? r.data)).catch(() => {})
+    setFilterBlockId(''); setFilterGpId('')
+    setFilterGps([])
+  }, [filterDistId])
+  useEffect(() => {
+    if (!filterBlockId) { setFilterGps([]); return }
+    geographyAPI.gps.list({ block: filterBlockId, page_size: 200 })
+      .then(r => setFilterGps(r.data.results ?? r.data)).catch(() => {})
+    setFilterGpId('')
+  }, [filterBlockId])
 
   const openCreate = () => { setEditing(null); setForm({}); setModal(true) }
   const openEdit   = (b)  => { setEditing(b); setForm({ ...b }); setModal(true) }
 
   const filteredBooths = booths.filter(b => {
-    if (geoFilters.district_lgd && b.district_lgd !== geoFilters.district_lgd) return false
-    if (geoFilters.block_lgd    && b.block_lgd    !== geoFilters.block_lgd)    return false
-    if (geoFilters.gp_lgd       && b.gp_lgd       !== geoFilters.gp_lgd)       return false
+    const selDist  = filterDistricts.find(d => String(d.id) === filterDistId)
+    const selBlock = filterBlocks.find(bl => String(bl.id) === filterBlockId)
+    const selGp    = filterGps.find(g => String(g.id) === filterGpId)
+    if (selDist  && b.district_lgd !== selDist.lgd_code)  return false
+    if (selBlock && b.block_lgd    !== selBlock.lgd_code)  return false
+    if (selGp    && b.gp_lgd       !== selGp.lgd_code)     return false
     if (search && !b.booth_name?.toLowerCase().includes(search.toLowerCase())
                && !b.booth_number?.toLowerCase().includes(search.toLowerCase())) return false
     return true
@@ -477,7 +607,30 @@ function BoothsTab({ booths, onReload }) {
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-xl border p-4 space-y-3">
-        <GeoFilterBar geoFilters={geoFilters} setGeoFilters={setGeoFilters} />
+        <div className="flex flex-wrap items-center gap-2">
+          <Filter size={13} className="text-slate-400" />
+          <select className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+            value={filterDistId} onChange={e => { setFilterDistId(e.target.value) }}>
+            <option value="">All Districts</option>
+            {filterDistricts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+          </select>
+          <select className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+            value={filterBlockId} disabled={!filterDistId} onChange={e => { setFilterBlockId(e.target.value) }}>
+            <option value="">All Blocks</option>
+            {filterBlocks.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+          </select>
+          <select className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+            value={filterGpId} disabled={!filterBlockId} onChange={e => { setFilterGpId(e.target.value) }}>
+            <option value="">All GPs</option>
+            {filterGps.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+          </select>
+          {(filterDistId || filterBlockId || filterGpId) && (
+            <button onClick={() => { setFilterDistId(''); setFilterBlockId(''); setFilterGpId('') }}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-slate-500 hover:text-indigo-600 border border-slate-200 rounded-lg hover:bg-slate-50">
+              <X size={11} /> Clear
+            </button>
+          )}
+        </div>
         <div className="relative max-w-xs">
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search booths..."
@@ -538,24 +691,8 @@ function BoothsTab({ booths, onReload }) {
           <Field label="Booth Name *">
             <input className={inp} value={form.booth_name ?? ''} onChange={e => setForm(p => ({ ...p, booth_name: e.target.value }))} />
           </Field>
-          <Field label="District Name">
-            <input className={inp} value={form.district_name ?? ''} onChange={e => setForm(p => ({ ...p, district_name: e.target.value }))} />
-          </Field>
-          <Field label="District LGD">
-            <input className={inp} value={form.district_lgd ?? ''} onChange={e => setForm(p => ({ ...p, district_lgd: e.target.value }))} />
-          </Field>
-          <Field label="Block Name">
-            <input className={inp} value={form.block_name ?? ''} onChange={e => setForm(p => ({ ...p, block_name: e.target.value }))} />
-          </Field>
-          <Field label="Block LGD">
-            <input className={inp} value={form.block_lgd ?? ''} onChange={e => setForm(p => ({ ...p, block_lgd: e.target.value }))} />
-          </Field>
-          <Field label="GP Name">
-            <input className={inp} value={form.gp_name ?? ''} onChange={e => setForm(p => ({ ...p, gp_name: e.target.value }))} />
-          </Field>
-          <Field label="GP LGD">
-            <input className={inp} value={form.gp_lgd ?? ''} onChange={e => setForm(p => ({ ...p, gp_lgd: e.target.value }))} />
-          </Field>
+          {/* Cascading District → Block → GP selector */}
+          <BoothGeoSelector form={form} setForm={setForm} />
           <Field label="Total Voters">
             <input type="number" className={inp} value={form.total_voters ?? ''} onChange={e => setForm(p => ({ ...p, total_voters: e.target.value }))} />
           </Field>

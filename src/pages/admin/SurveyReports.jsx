@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useMemo, useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import toast from 'react-hot-toast'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell, Legend, AreaChart, Area
@@ -8,9 +9,9 @@ import {
   ClipboardList, CheckCircle2, Clock3, Phone, PhoneOff, MapPin,
   TrendingUp, MessageCircleQuestion, Users, ChevronDown, ChevronLeft,
   ChevronRight, Download, RefreshCw, Calendar, Filter, Home, Wallet,
-  HardHat, AlertTriangle, Eye
+  HardHat, AlertTriangle, Eye, UserMinus
 } from 'lucide-react'
-import { surveyReportAPI } from '../../api'
+import { surveyReportAPI, assignmentAPI } from '../../api'
 import Spinner from '../../components/ui/Spinner'
 import StatCard from '../../components/ui/StatCard'
 import Select from '../../components/ui/Select'
@@ -267,12 +268,38 @@ function SummaryTab({ filters }) {
   )
 }
 
+// ─── Deassign helper ──────────────────────────────────────────────────────────
+function useDeassign(invalidateKeys = []) {
+  const qc = useQueryClient()
+  const [deassigning, setDeassigning] = useState(null)
+
+  const deassign = useCallback(async (row) => {
+    const name = row.beneficiary_name
+    if (!window.confirm(`Remove assignment for "${name}" from their current operator?\n\nThe survey record will remain; only the operator link is removed.`)) return
+    if (!row.beneficiary_id) { toast.error('No beneficiary ID on this row'); return }
+    setDeassigning(row.survey_id ?? row.beneficiary_id)
+    try {
+      await assignmentAPI.disassign({ beneficiary_ids: [row.beneficiary_id] })
+      toast.success(`"${name}" deassigned from operator`)
+      invalidateKeys.forEach(k => qc.invalidateQueries({ queryKey: [k] }))
+    } catch (err) {
+      const msg = err?.response?.data?.detail ?? err?.response?.data?.error ?? 'Deassign failed'
+      toast.error(msg)
+    } finally {
+      setDeassigning(null)
+    }
+  }, [qc, JSON.stringify(invalidateKeys)])
+
+  return { deassign, deassigning }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // TAB 2: Status-wise list
 // ─────────────────────────────────────────────────────────────────────────────
 function StatusTab({ filters, onView }) {
   const [status,   setStatus]   = useState('Pending')
   const [page,     setPage]     = useState(1)
+  const { deassign, deassigning } = useDeassign(['report-status', 'report-summary'])
 
   const params = { ...filters, status, page, page_size: 20 }
   const { data, isLoading, isFetching } = useQuery({
@@ -330,13 +357,25 @@ function StatusTab({ filters, onView }) {
                       {r.updated_at ? new Date(r.updated_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => onView(r.beneficiary_id)}
-                        className="p-1.5 rounded-lg hover:bg-brand-50 text-slate-400 hover:text-brand-600 transition-colors"
-                        title="View full details"
-                      >
-                        <Eye size={15} />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => onView(r.beneficiary_id)}
+                          className="p-1.5 rounded-lg hover:bg-brand-50 text-slate-400 hover:text-brand-600 transition-colors"
+                          title="View full details"
+                        >
+                          <Eye size={15} />
+                        </button>
+                        <button
+                          onClick={() => deassign(r)}
+                          disabled={deassigning === (r.survey_id ?? r.beneficiary_id)}
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors disabled:opacity-40"
+                          title="Deassign from operator"
+                        >
+                          {deassigning === (r.survey_id ?? r.beneficiary_id)
+                            ? <Spinner className="w-3.5 h-3.5" />
+                            : <UserMinus size={15} />}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -457,6 +496,7 @@ function GPTab({ filters }) {
 function CallStatusTab({ filters, onView }) {
   const [callFilter, setCallFilter] = useState('No')
   const [page, setPage] = useState(1)
+  const { deassign, deassigning } = useDeassign(['report-call', 'report-summary'])
 
   const params = { ...filters, call_connected: callFilter, page, page_size: 20 }
   const { data, isLoading, isFetching } = useQuery({
@@ -521,13 +561,25 @@ function CallStatusTab({ filters, onView }) {
                       {r.updated_at ? new Date(r.updated_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => onView(r.beneficiary_id)}
-                        className="p-1.5 rounded-lg hover:bg-brand-50 text-slate-400 hover:text-brand-600 transition-colors"
-                        title="View full details"
-                      >
-                        <Eye size={15} />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => onView(r.beneficiary_id)}
+                          className="p-1.5 rounded-lg hover:bg-brand-50 text-slate-400 hover:text-brand-600 transition-colors"
+                          title="View full details"
+                        >
+                          <Eye size={15} />
+                        </button>
+                        <button
+                          onClick={() => deassign(r)}
+                          disabled={deassigning === (r.survey_id ?? r.beneficiary_id)}
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors disabled:opacity-40"
+                          title="Deassign from operator"
+                        >
+                          {deassigning === (r.survey_id ?? r.beneficiary_id)
+                            ? <Spinner className="w-3.5 h-3.5" />
+                            : <UserMinus size={15} />}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
