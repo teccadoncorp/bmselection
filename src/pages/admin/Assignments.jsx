@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Link2, CheckSquare, Square, CheckSquare2,
-  ArrowLeft, Search, Phone, MapPin, BarChart2
+  ArrowLeft, Search, Phone, MapPin, BarChart2, UserMinus
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { assignmentAPI, beneficiaryAPI } from '../../api'
@@ -227,15 +227,29 @@ function AssignTab() {
 
 // ─── Tab: Operator Detail ─────────────────────────────────────────────────────
 function OperatorDetailTab() {
+  const qc = useQueryClient()
   const [selectedOp, setSelectedOp] = useState(null)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [callFilter, setCallFilter] = useState('')
+  const [selectedBenes, setSelectedBenes] = useState([])
 
   const { data: summary } = useQuery({
     queryKey: ['assignment-summary'],
     queryFn: () => assignmentAPI.operatorSummary().then(r => r.data),
+  })
+
+  const disassignMut = useMutation({
+    mutationFn: () =>
+      assignmentAPI.disassign({ operator_id: selectedOp.operator_id, beneficiary_ids: selectedBenes }),
+    onSuccess: (res) => {
+      toast.success(`Unassigned ${res.data.disassigned} beneficiar${res.data.disassigned === 1 ? 'y' : 'ies'}`)
+      setSelectedBenes([])
+      qc.invalidateQueries({ queryKey: ['assignment-summary'] })
+      qc.invalidateQueries({ queryKey: ['operator-detail'] })
+    },
+    onError: e => toast.error(getErrorMessage(e)),
   })
 
   const detailParams = {
@@ -261,6 +275,21 @@ function OperatorDetailTab() {
     setSearch('')
     setStatusFilter('')
     setCallFilter('')
+    setSelectedBenes([])
+  }
+
+  const toggleBene = (id) =>
+    setSelectedBenes(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+
+  const allPageSelected = results.length > 0 && results.every(r => selectedBenes.includes(r.beneficiary.id))
+
+  const selectAllPage = () => {
+    const allIds = results.map(r => r.beneficiary.id)
+    if (allPageSelected) {
+      setSelectedBenes(prev => prev.filter(id => !allIds.includes(id)))
+    } else {
+      setSelectedBenes(prev => [...new Set([...prev, ...allIds])])
+    }
   }
 
   return (
@@ -356,6 +385,13 @@ function OperatorDetailTab() {
                   <table className="w-full text-sm min-w-[750px]">
                     <thead className="bg-slate-50 border-b border-slate-100">
                       <tr>
+                        <th className="px-4 py-3 w-8">
+                          <button onClick={selectAllPage}>
+                            {allPageSelected
+                              ? <CheckSquare size={16} className="text-brand-600" />
+                              : <Square size={16} className="text-slate-300" />}
+                          </button>
+                        </th>
                         {['Beneficiary', 'Location', 'Survey Status', 'Call', 'Govt House', 'Amount', 'Money Taken'].map(h => (
                           <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                         ))}
@@ -363,7 +399,14 @@ function OperatorDetailTab() {
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                       {results.map(({ beneficiary: b, survey: s }) => (
-                        <tr key={b.id} className="hover:bg-slate-50/50 transition-colors">
+                        <tr key={b.id}
+                          onClick={() => toggleBene(b.id)}
+                          className={`cursor-pointer transition-colors ${selectedBenes.includes(b.id) ? 'bg-red-50' : 'hover:bg-slate-50/50'}`}>
+                          <td className="px-4 py-3 w-8">
+                            {selectedBenes.includes(b.id)
+                              ? <CheckSquare size={16} className="text-red-500" />
+                              : <Square size={16} className="text-slate-300" />}
+                          </td>
                           <td className="px-4 py-3">
                             <p className="font-medium text-slate-800 whitespace-nowrap">{b.beneficiary_name}</p>
                             <p className="text-xs font-mono text-slate-400">{b.mobile_number}</p>
@@ -397,8 +440,24 @@ function OperatorDetailTab() {
               )}
               <div className="px-4">
                 <Pagination count={detail?.count || 0} page={page} pageSize={50}
-                  onPage={(p) => setPage(p)} />
+                  onPage={(p) => { setPage(p); setSelectedBenes([]) }} />
               </div>
+
+              {/* Unassign footer */}
+              {selectedBenes.length > 0 && (
+                <div className="px-4 py-3 border-t border-slate-100 bg-red-50 flex items-center gap-3">
+                  <p className="text-sm text-slate-600 flex-1">
+                    Unassign <strong>{selectedBenes.length}</strong> beneficiar{selectedBenes.length === 1 ? 'y' : 'ies'} from <strong>{selectedOp.operator_name}</strong>
+                  </p>
+                  <button
+                    onClick={() => disassignMut.mutate()}
+                    disabled={disassignMut.isPending}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors">
+                    <UserMinus size={15} />
+                    {disassignMut.isPending ? 'Unassigning…' : 'Unassign'}
+                  </button>
+                </div>
+              )}
             </div>
           </>
         )}

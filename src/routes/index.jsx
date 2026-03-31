@@ -21,7 +21,8 @@ import OperatorDashboard from '../pages/operator/Dashboard'
 import OperatorBeneficiaries from '../pages/operator/BeneficiaryList'
 import OperatorBeneficiaryDetail from '../pages/operator/BeneficiaryDetail'
 import OperatorTasks from '../pages/operator/Tasks'
-import OperatorOpinion from '../pages/operator/OpinionEntry'        // ← NEW
+import OperatorOpinion from '../pages/operator/OpinionEntry'
+import OperatorComplaints from '../pages/operator/Complaints'
 
 
 function RequireAuth({ children, role }) {
@@ -73,7 +74,8 @@ export default function AppRouter() {
           <Route path="beneficiaries"     element={<OperatorBeneficiaries />} />
           <Route path="beneficiaries/:id" element={<OperatorBeneficiaryDetail />} />
           <Route path="tasks"             element={<OperatorTasks />} />
-          <Route path="opinion"           element={<OperatorOpinion />} />        {/* ← NEW */}
+          <Route path="opinion"           element={<OperatorOpinion />} />
+          <Route path="complaints"        element={<OperatorComplaints />} />
         </Route>
 
         {/* Default redirect */}

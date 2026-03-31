@@ -26,26 +26,29 @@ function GeoFilterBar({ geoFilters, setGeoFilters, className = '' }) {
   const [gps, setGps]             = useState([])
   const [distId, setDistId]       = useState('')
   const [blockId, setBlockId]     = useState('')
+  const [gpId, setGpId]           = useState('')
 
   useEffect(() => {
     geographyAPI.districts.list({ page_size: 200 })
       .then(r => setDistricts(r.data.results ?? r.data)).catch(() => {})
   }, [])
   useEffect(() => {
-    if (!distId) { setBlocks([]); setGps([]); return }
+    if (!distId) { setBlocks([]); setGps([]); setBlockId(''); setGpId(''); return }
     geographyAPI.blocks.list({ district: distId, page_size: 200 })
       .then(r => setBlocks(r.data.results ?? r.data)).catch(() => {})
+    setBlockId(''); setGpId(''); setGps([])
   }, [distId])
   useEffect(() => {
-    if (!blockId) { setGps([]); return }
+    if (!blockId) { setGps([]); setGpId(''); return }
     geographyAPI.gps.list({ block: blockId, page_size: 200 })
       .then(r => setGps(r.data.results ?? r.data)).catch(() => {})
+    setGpId('')
   }, [blockId])
 
   const sel = 'border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white'
 
   const reset = () => {
-    setDistId(''); setBlockId('')
+    setDistId(''); setBlockId(''); setGpId('')
     setGeoFilters({})
   }
 
@@ -54,9 +57,12 @@ function GeoFilterBar({ geoFilters, setGeoFilters, className = '' }) {
       <Filter size={13} className="text-slate-400" />
       <select className={sel} value={distId}
         onChange={e => {
-          setDistId(e.target.value); setBlockId('')
           const d = districts.find(x => String(x.id) === e.target.value)
-          setGeoFilters({ district_lgd: d?.lgd_code, district_id: e.target.value || undefined })
+          setDistId(e.target.value)
+          setGeoFilters(d
+            ? { district_lgd: d.lgd_code }
+            : {}
+          )
         }}>
         <option value="">All Districts</option>
         {districts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
@@ -64,18 +70,30 @@ function GeoFilterBar({ geoFilters, setGeoFilters, className = '' }) {
 
       <select className={sel} value={blockId} disabled={!distId}
         onChange={e => {
-          setBlockId(e.target.value)
           const b = blocks.find(x => String(x.id) === e.target.value)
-          setGeoFilters(f => ({ ...f, block_lgd: b?.lgd_code, block_id: e.target.value || undefined }))
+          setBlockId(e.target.value)
+          setGeoFilters(f => {
+            const next = { ...f }
+            delete next.block_lgd
+            delete next.gp_lgd
+            if (b) next.block_lgd = b.lgd_code
+            return next
+          })
         }}>
         <option value="">All Blocks</option>
         {blocks.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
       </select>
 
-      <select className={sel} disabled={!blockId}
+      <select className={sel} value={gpId} disabled={!blockId}
         onChange={e => {
           const g = gps.find(x => String(x.id) === e.target.value)
-          setGeoFilters(f => ({ ...f, gp_lgd: g?.lgd_code, gp_id: e.target.value || undefined }))
+          setGpId(e.target.value)
+          setGeoFilters(f => {
+            const next = { ...f }
+            delete next.gp_lgd
+            if (g) next.gp_lgd = g.lgd_code
+            return next
+          })
         }}>
         <option value="">All GPs</option>
         {gps.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
@@ -147,14 +165,14 @@ export default function AdminOpinionAnalysis() {
   const [operators, setOperators]       = useState([])
   const [loading, setLoading]           = useState(false)
 
-  // fetch booths + operators once
+  // fetch booths + operators once (page_size=1000 to get all booths for client-side filtering)
   useEffect(() => {
-    api.get('/opinion/booths/').then(r => setBooths(r.data.results ?? r.data)).catch(() => {})
+    api.get('/opinion/booths/', { params: { page_size: 1000 } }).then(r => setBooths(r.data.results ?? r.data)).catch(() => {})
     api.get('/auth/operators/').then(r => setOperators(r.data.results ?? r.data)).catch(() => {})
   }, [])
 
   const reload = () => {
-    api.get('/opinion/booths/').then(r => setBooths(r.data.results ?? r.data)).catch(() => {})
+    api.get('/opinion/booths/', { params: { page_size: 1000 } }).then(r => setBooths(r.data.results ?? r.data)).catch(() => {})
   }
 
   return (
